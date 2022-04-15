@@ -1,7 +1,8 @@
-import React ,{useEffect,useState} from 'react';
-import {useCookies} from 'react-cookie';
+import React, { useEffect, useState } from "react";
+import { useCookies } from "react-cookie";
 import axios from "axios";
 import css from "./style.css";
+import ArrowBackIosIcon from "@material-ui/icons/ArrowBackIos";
 import AddIcon from "@material-ui/icons/Add";
 import AddAPhotoIcon from "@material-ui/icons/AddAPhoto";
 import EditIcon from "@material-ui/icons/Edit";
@@ -20,122 +21,123 @@ import Sidebar from "./Sidebar";
 import PopUp from "./PopUp";
 
 function Profile(props) {
-  const [profileImage, setProfileImage] = useState(
-    "https://images.unsplash.com/photo-1618721405821-80ebc4b63d26?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Nnx8ZmVtYWxlJTIwbW9kZWx8ZW58MHx8MHx8&w=1000&q=80"
-  );
-  const[userId,setuserId] = useState('');
-  const [cookies,removeCookies] = useCookies([]);
-  const [userPassion,setUserPassion] = useState([]);
+  const url = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
+  const [userId, setuserId] = useState("");
+  const [cookies, removeCookies] = useCookies([]);
+  const [userPassion, setUserPassion] = useState([]);
   const [userData, setuserData] = useState({
     name: "",
-    age:"",
+    age: "",
     bio: "",
   });
-  useEffect(()=>{
-    const verifyUser = async ()=>{
-      if(!cookies.jwt){
+  const [profileImage, setProfileImage] = useState("");
+  useEffect(() => {
+    const verifyUser = async () => {
+      if (!cookies.jwt) {
         // try to redirect to profile page...
         console.log("No cookie");
         return props.onChecked("login");
-      }
-      else{
-        const {data} = await axios.post("http://localhost:5000",{},{withCredentials:true});
+      } else {
+        const { data } = await axios.post(
+          "http://localhost:5000",
+          {},
+          { withCredentials: true }
+        );
         //data
         console.log(data.user._id);
         setuserId(data.user._id);
-        if(!data.status){
-          removeCookies("jwt")
+        if (!data.status) {
+          removeCookies("jwt");
           // try to redirect to profile page...
           console.log("error cookie");
           return props.onChecked("login");
-        }
-        else{
+        } else {
           console.log("u r in profile page");
           console.log(data.user.name);
           console.log(data.user.tags);
-          setuserData(()=>{
-            return{
-              name : data.user.name,
-              age : data.user.age,
-              bio : data.user.about
-            }
-          })
-          setUserPassion([]);
           setProfileImage([]);
-          setProfileImage([data.user.uploadedimg[0].imgUrl]);
-          data.user.tags.map((item,index)=>{
-              return(
-                setUserPassion((prevValue)=>{
-                  return[...prevValue,
-                  item
-                ]
-                })
-              )
-          })
-          console.log(" this is c k",userPassion);
+          setUserPassion([]);
+          for (let i = 0; i < data.user.uploadedimg.length; i++) {
+            setProfileImage((prevValue) => {
+              return [...prevValue, data.user.uploadedimg[i].imgUrl];
+            });
+          }
+          setuserData(() => {
+            return {
+              name: data.user.name,
+              age: data.user.age,
+              bio: data.user.about,
+            };
+          });
+          data.user.tags.map((item, index) => {
+            return setUserPassion((prevValue) => {
+              return [...prevValue, item];
+            });
+          });
+          console.log(" this is c k", userPassion);
         }
       }
     };
     verifyUser();
-  },[cookies,removeCookies]);
+  }, [cookies, removeCookies]);
 
-
-  const getProfileData = async ()=>{
-    if(!cookies.jwt){
+  const getProfileData = async () => {
+    console.log("we are inside profile");
+    if (!cookies.jwt) {
       // try to redirect to profile page...
       console.log("No cookie");
       return props.onChecked("login");
-    }
-    else{
-      const {data} = await axios.post("http://localhost:5000",{},{withCredentials:true});
+    } else {
+      const { data } = await axios.post(
+        "http://localhost:5000",
+        {},
+        { withCredentials: true }
+      );
       //data
       console.log(data.user._id);
       setuserId(data.user._id);
-      if(!data.status){
-        removeCookies("jwt")
+      if (!data.status) {
+        removeCookies("jwt");
         // try to redirect to profile page...
         console.log("error cookie");
         return props.onChecked("login");
-      }
-      else{
+      } else {
         console.log("u r in profile page");
         console.log(data.user.name);
         console.log("under sur");
         console.log(data.user.tags);
+        console.log(data.user.uploadedimg);
         console.log("undr sur");
-        setuserData(()=>{
-          return{
-            name : data.user.name,
-            age : data.user.age,
-            bio : data.user.about
-          }
-        })
-        setUserPassion([]);
+        setuserData(() => {
+          return {
+            name: data.user.name,
+            age: data.user.age,
+            bio: data.user.about,
+          };
+        });
+        console.log(data.user.uploadedimg[0]);
         setProfileImage([]);
-        setProfileImage([data.user.uploadedimg[0].imgUrl]);
-        data.user.tags.map((item,index)=>{
-            return(
-              setUserPassion((prevValue)=>{
-                if(userPassion.length<=5){
-                return[...prevValue,
-                item
-              ]
-            }
-              })
-            )
-        })
+        for (let i = 0; i < data.user.uploadedimg.length; i++) {
+          setProfileImage((prevValue) => {
+            return [...prevValue, data.user.uploadedimg[i].imgUrl];
+          });
+        }
+        setUserPassion([]);
+        data.user.tags.map((item, index) => {
+          return setUserPassion((prevValue) => {
+            return [...prevValue, item];
+          });
+        });
+        console.log(userPassion);
       }
     }
-  }
-
-
-  
+  };
 
   const [show, setShow] = useState({
     Profile: true,
     EditProfile: false,
     Feed: false,
-    Chat:false
+    Chat: false,
   });
 
   function handleShow(value) {
@@ -145,28 +147,28 @@ function Profile(props) {
           Profile: true,
           EditProfile: false,
           Feed: false,
-          Chat:false
+          Chat: false,
         };
       } else if (value === "editprofile") {
         return {
           Profile: false,
           EditProfile: true,
           Feed: false,
-          Chat:false
+          Chat: false,
         };
       } else if (value === "feed") {
         return {
           Profile: false,
           EditProfile: false,
           Feed: true,
-          Chat:false
+          Chat: false,
         };
-      }else if (value === "chat") {
+      } else if (value === "chat") {
         return {
           Profile: false,
           EditProfile: false,
           Feed: false,
-          Chat:true
+          Chat: true,
         };
       }
     });
@@ -178,34 +180,79 @@ function Profile(props) {
       Feed: false,
     });
   }
-  function redirect(e){
-    if(e==="GO") return props.onChecked("login");
+  function redirect(e) {
+    if (e === "GO") return props.onChecked("login");
   }
+  const [currSlide, setcurrSlide] = useState(1);
+  const nextSlide = () => {
+    if (currSlide !== profileImage.length) {
+      setcurrSlide(currSlide + 1);
+      console.log(currSlide);
+    } else if (currSlide === profileImage.length) {
+      setcurrSlide(1);
+    }
+  };
+  const prevSlide = () => {
+    if (currSlide !== 1) {
+      setcurrSlide(currSlide - 1);
+    } else if (currSlide === 1) {
+      setcurrSlide(profileImage.length);
+    }
+  };
   return (
     <>
       <div className="sideBartoo">
-       { show.Chat ? null :  <Sidebar
-          name={userData.name}
-          image={profileImage}
-          onShow={handleShow}
-          id={userId}
-          bcLog = {redirect}
-        /> }
+        {show.Chat ? null : (
+          <Sidebar
+            name={userData.name}
+            image={profileImage.length!=0 ? profileImage[0] : url }
+            onShow={handleShow}
+            id={userId}
+            bcLog={redirect}
+          />
+        )}
         {show.Profile ? (
           <>
             <div className="profile">
               <div className="upper">
                 <h3>PROFILE</h3>
                 <div className="profilechild">
-                  {profileImage ? (
-                    <img src={profileImage} alt="pic" id={userPassion.length===0 ? "incHeight" : null} />
+                  {profileImage.length != 0 ? (
+                    profileImage.map((obj, index) => {
+                      return (
+                        <img
+                          key={index}
+                          className={currSlide === index + 1 ? "fade" : "slide"}
+                          src={profileImage[index]}
+                          alt="pic"
+                          id={userPassion.length === 0 ? "incHeight" : "decBottom"}
+                        />
+                      );
+                    })
                   ) : (
                     <img
-                      src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+                      src={url}
                       alt="blank"
-                      id={userPassion.length===0 ? "incHeight" : null}
+                      id={userPassion.length === 0 ? "incHeight" : null}
                     />
                   )}
+                  {profileImage.length > 1 ? (
+                    <>
+                      <ArrowForwardIosIcon
+                        className="prbtn"
+                        id={userPassion.length===0 ? "incBottom" : null}
+                        style={{ color: "#000" }}
+                        onClick={nextSlide}
+                      />
+
+                      <ArrowBackIosIcon
+                        className="plbtn"
+                        id={userPassion.length===0 ? "incBottom" : null}
+                        style={{ color: "#000" }}
+                        onClick={prevSlide}
+                      />
+                    </>
+                  ) : null}
                   <div className="dataStyle">
                     {userData ? (
                       <p>
@@ -213,19 +260,19 @@ function Profile(props) {
                       </p>
                     ) : null}
                   </div>
-                  {userData.bio ?
-                  <div className="dataStyle">
-                 <p>{userData.bio}</p>
-                  </div>
-                    : null}
-                  { userPassion.length!=0 ? 
-                  <div className="dataStyle like">
-                    <h4>Passion</h4>
-                    {userPassion.map((obj,index) => {
-                      return <span> {userPassion[index]} </span>;
-                    })}
-                  </div> : null
-                  }
+                  {userData.bio ? (
+                    <div className="dataStyle">
+                      <p>{userData.bio}</p>
+                    </div>
+                  ) : null}
+                  {userPassion.length != 0 ? (
+                    <div className="dataStyle like">
+                      <h4>Passion</h4>
+                      {userPassion.map((obj, index) => {
+                        return <span> {userPassion[index]} </span>;
+                      })}
+                    </div>
+                  ) : null}
                 </div>
                 <button className="pbtn" onClick={handleEditprofile}>
                   Edit Profile
@@ -234,8 +281,9 @@ function Profile(props) {
             </div>
           </>
         ) : null}
-        {show.EditProfile ? <EditProfile change={handleShow} idx={userId} call={getProfileData}
-        /> : null}
+        {show.EditProfile ? (
+          <EditProfile change={handleShow} idx={userId} call={getProfileData} />
+        ) : null}
         {show.Feed ? (
           <Feed
             name={userData.name}
