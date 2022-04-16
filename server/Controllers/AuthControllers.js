@@ -156,7 +156,7 @@ module.exports.googlelogin = async(req,res,next)=>{
                             let password = email + process.env.SECURING_AUTO_GEN_GOOGLE_PASSWORD;
                             let newUser = new User({name,email,password});
                             console.log(newUser);
-                            newUser.save((err,data)=>{
+                            newUser.save((err,user)=>{
                                 if(err){
                                     console.log("yaha tak chal raha hai!!",newUser);
                                     return res.status(400).json({
