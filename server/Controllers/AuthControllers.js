@@ -25,84 +25,84 @@ const createToken = (id)=>{
     });
 };
 
-const handleErrors = (err)=>{
-    let errors = {email:"",password:""};
+// const handleErrors = (err)=>{
+//     let errors = {email:"",password:""};
 
-    if(err.message === "Incorrect Email"){
-        errors.email = "That email is not registered";
-    }
+//     if(err.message === "Incorrect Email"){
+//         errors.email = "That email is not registered";
+//     }
 
-    if(err.message === "Incorrect Password"){
-        errors.email = "That password is not correct";
-    }
+//     if(err.message === "Incorrect Password"){
+//         errors.email = "That password is not correct";
+//     }
 
-    if(err.code === 11000){
-        errors.email = "Email is alraedy registered";
-        return errors;
-    }
-    if(err.message.includes("mango validation failed")){
-        Object.values(err.errors).forEach(({properties})=>{
-            errors[properties.path] = properties.message;
-        });
-    }
-    return errors;
-}
+//     if(err.code === 11000){
+//         errors.email = "Email is alraedy registered";
+//         return errors;
+//     }
+//     if(err.message.includes("mango validation failed")){
+//         Object.values(err.errors).forEach(({properties})=>{
+//             errors[properties.path] = properties.message;
+//         });
+//     }
+//     return errors;
+// }
 
-module.exports.register = async (req,res,next)=>{
-    try{
-        const{name, email, password} = req.body;
-        console.log(req.body);
-        const user = await User.create({name, email, password});
-        const token = createToken(user._id);
-
-        res.cookie("jwt",token,{
-            withCredentials:true,
-            httpOnly:false,
-            maxAge:maxAge*1000,
-        });
-        res.status(201).json({user:user._id,created:true});
-    }
-    catch(err){
-        console.log(err);
-        const errors = handleErrors(err);
-        res.json({errors,created:false});
-    }
-}
-
-// module.exports.register = async(req,res,next)=>{
+// module.exports.register = async (req,res,next)=>{
 //     try{
 //         const{name, email, password} = req.body;
-//         bcrypt.hash(password,saltRound,function(error,hash){
-//             User.findOne({email}).exec((err,user)=>{
-//                 if(user){
-//                     return res.status(400).json({error:"user already exist"});
-//                 }
-//                 else{
-//                     const newUser = new User({name:name,email:email,password:hash});
-//                     newUser.save((err,user)=>{
-//                         if(err){
-//                             console.log("error in registration: ",err);
-//                             return res.status(400).json({error:"error ocuured"});
-//                         }
-//                         if(user){
-//                             const token = createToken(user._id);
+//         console.log(req.body);
+//         const user = await User.create({name, email, password});
+//         const token = createToken(user._id);
 
-//                             res.cookie("jwt",token,{
-//                                 withCredentials:true,
-//                                 httpOnly:false,
-//                                 maxAge:maxAge*1000,
-//                             });
-//                             res.status(201).json({user:user._id,created:true});
-//                         }
-//                     })
-//                 }
-//             })
-//         })
+//         res.cookie("jwt",token,{
+//             withCredentials:true,
+//             httpOnly:false,
+//             maxAge:maxAge*1000,
+//         });
+//         res.status(201).json({user:user._id,created:true});
 //     }
 //     catch(err){
-//         next(err);
+//         console.log(err);
+//         const errors = handleErrors(err);
+//         res.json({errors,created:false});
 //     }
 // }
+
+module.exports.register = async(req,res,next)=>{
+    try{
+        const{name, email, password} = req.body;
+        bcrypt.hash(password,saltRound,function(error,hash){
+            User.findOne({email}).exec((err,user)=>{
+                if(user){
+                    return res.status(400).json({error:"user already exist"});
+                }
+                else{
+                    const newUser = new User({name:name,email:email,password:hash});
+                    newUser.save((err,user)=>{
+                        if(err){
+                            console.log("error in registration: ",err);
+                            return res.status(400).json({error:"error ocuured"});
+                        }
+                        if(user){
+                            const token = createToken(user._id);
+
+                            res.cookie("jwt",token,{
+                                withCredentials:true,
+                                httpOnly:false,
+                                maxAge:maxAge*1000,
+                            });
+                            res.status(201).json({user:user._id,created:true});
+                        }
+                    })
+                }
+            })
+        })
+    }
+    catch(err){
+        next(err);
+    }
+}
 
 // module.exports.accountActivation = async(req,res,next)=>{
 //     try{
@@ -135,7 +135,8 @@ module.exports.googlelogin = async(req,res,next)=>{
         console.log(tokenId);
         client.verifyIdToken({idToken : tokenId,audience:"634193116808-mhg7vbt3hph1bg2sb0sfia6skijf3o71.apps.googleusercontent.com"}).then(response =>{
             const {email_verified,name,email} = response.payload;
-            console.log(response.payload);
+            console.log("this is payloaad :",response.payload);
+            console.log("payload ends");
             if(email_verified){
                 User.findOne({email}).exec((err,user)=>{
                     if(err){
@@ -186,94 +187,96 @@ module.exports.googlelogin = async(req,res,next)=>{
     }
 }
 
-module.exports.login = async (req,res,next)=>{
-    try{
-        const {email,password} = req.body;
-        console.log("this is login");
-        console.log(req.body);
-        console.log("user is fetched");
-        var name = "";
-        User.findOne({email}).exec(async (err,userr)=>{
-            if(err){
-                return res.status(400).json({
-                    error: "email does not exist.."
-                })
-            }
-            else{
-                name = userr.name;
-                console.log(name);
-                console.log(email);
-                console.log(password);
-                const user = await User.login(name,email,password);
-                const token = createToken(user._id);
-
-                res.cookie("jwt",token,{
-                    withCredentials:true,
-                    httpOnly:false,
-                    maxAge:maxAge*1000,
-                });
-                res.status(200).json({user:user._id,created:true});
-            }
-        })
-        
-    }
-    catch(err){
-        console.log(err);
-        const errors = handleErrors(err);
-        res.json({errors,created:false});
-    }
-}
-
 // module.exports.login = async (req,res,next)=>{
 //     try{
 //         const {email,password} = req.body;
+//         console.log("this is login");
 //         console.log(req.body);
-//         User.findOne({email}).exec(async (err,user)=>{
+//         console.log("user is fetched");
+//         var name = "";
+//         User.findOne({email}).exec(async (err,userr)=>{
 //             if(err){
 //                 return res.status(400).json({
-//                     error: "email does not exist"
+//                     error: "email does not exist.."
 //                 })
 //             }
-//             if(user){
-//                 bcrypt.compare(password,user.password,function(err,result){
-//                     if(result===true){
-//                         const token = createToken(user._id);
+//             else{
+//                 name = userr.name;
+//                 console.log(name);
+//                 console.log(email);
+//                 console.log(password);
+//                 const user = await User.login(name,email,password);
+//                 const token = createToken(user._id);
 
-//                         res.cookie("jwt",token,{
-//                             withCredentials:true,
-//                             httpOnly:false,
-//                             maxAge:maxAge*1000,
-//                         });
-//                         res.status(200).json({user:user._id,created:true});
-//                     }
-//                     else{
-//                         return res.status(400).json({
-//                             error: "password is incorect",
-//                         })
-//                     }
-//                 })
-//                 // if(password === user.password){
-//                 //     const token = createToken(user._id);
-
-//                 //         res.cookie("jwt",token,{
-//                 //             withCredentials:true,
-//                 //             httpOnly:false,
-//                 //             maxAge:maxAge*1000,
-//                 //         });
-//                 //         res.status(200).json({user:user._id,created:true});
-//                 // }
-//                 // else{
-//                 //     return res.status(400).json({
-//                 //                     error: "password is incorect",
-//                 //                 })
-//                 // }
+//                 res.cookie("jwt",token,{
+//                     withCredentials:true,
+//                     httpOnly:false,
+//                     maxAge:maxAge*1000,
+//                 });
+//                 res.status(200).json({user:user._id,created:true});
 //             }
 //         })
+        
 //     }
 //     catch(err){
-//         next(err);
+//         console.log(err);
+//         const errors = handleErrors(err);
+//         res.json({errors,created:false});
 //     }
 // }
+
+module.exports.login = async (req,res,next)=>{
+    try{
+        const {email,password} = req.body;
+        console.log(req.body);
+        User.findOne({email}).exec(async (err,user)=>{
+            if(err){
+                return res.status(400).json({
+                    error: "email does not exist"
+                })
+            }
+            if(user){
+                bcrypt.compare(password,user.password,function(err,userr){
+                    if(userr===true){
+                        // console.log("this is user :",user);
+                        // console.log("this is user id :",user._id);
+                        const token = createToken(user._id);
+
+                        res.cookie("jwt",token,{
+                            withCredentials:true,
+                            httpOnly:false,
+                            maxAge:maxAge*1000,
+                        });
+                        res.status(200).json({user:user._id,created:true});
+                    }
+                    else{
+                        return res.status(400).json({
+                            error: "password is incorect",
+                        })
+                    }
+                })
+                // if(password === user.password){
+                //     const token = createToken(user._id);
+
+                //         res.cookie("jwt",token,{
+                //             withCredentials:true,
+                //             httpOnly:false,
+                //             maxAge:maxAge*1000,
+                //         });
+                //         res.status(200).json({user:user._id,created:true});
+                // }
+                // else{
+                //     return res.status(400).json({
+                //                     error: "password is incorect",
+                //                 })
+                // }
+            }
+        })
+    }
+    catch(err){
+        next(err);
+    }
+}
 
 
 module.exports.editProfile = (req,res,next)=>{
@@ -296,6 +299,15 @@ module.exports.editProfile = (req,res,next)=>{
                 }
                 if(gender != ""){
                     user.sex = gender;
+                    // if(gender === "Male"){
+                    //     user.sex = 1;
+                    // }
+                    // else if(gender === "Female"){
+                    //     user.sex = 0;
+                    // }
+                    // else{
+                    //     user.sex = 2;
+                    // }
                 }
                 if(passion.length != 0){
                     user.tags = passion;
@@ -320,9 +332,10 @@ module.exports.editProfile = (req,res,next)=>{
                     })
                 }
                 else{
+                    console.log("this is users sex :",data.sex);
                     res.status(200).json({
                         message:"success",
-                        user:user._id,
+                        user:data._id,
                     });
                 }
             });
@@ -425,7 +438,7 @@ module.exports.userFeeds = (req,res,next)=>{
         var city = "";
         var company = "";
         var institution = "";
-        var gender = "";
+        var gender = 0;
         User.findById(id,(error,user)=>{
             if(error){
                 res.json({
@@ -443,15 +456,13 @@ module.exports.userFeeds = (req,res,next)=>{
                 company = user.company;
                 institution = user.institution;
                 gender = user.sex;
-                if(gender == "Male"){
-                    gender = "Female";
-                }
-                if(gender == "Female"){
+                if(gender === "Female"){
                     gender = "Male";
                 }
-                if(gender == "Other"){
+                else{
                     gender = "Female";
                 }
+                // console.log("gender in feed :",gender);
                 let suggestions = [];
                 let tag = [];
                 tag.push(tag1);
@@ -468,13 +479,20 @@ module.exports.userFeeds = (req,res,next)=>{
                         data.forEach((userdata)=>{
                             if(userdata.id != id){  
                                 let SendUser = false;
-                                if((userdata.city===city || userdata.institution===institution || userdata.company===company)&&(userdata.sex===gender)){
-                                    SendUser = true;
+                                console.log(userdata.name,userdata.email,userdata.sex);
+                                if((userdata.city===city || userdata.institution===institution || userdata.company===company)){
+                                    if(userdata.sex === gender){
+                                        console.log("This is gender under algo :",userdata.sex);
+                                        SendUser = true;
+                                    }
                                 }
                                 for(let i=0;i<=4;i++){
                                     for(let j=0;j<=4;j++){
-                                        if((tag[i]===userdata.tags[j])&&(userdata.sex===gender)){
-                                            SendUser = true;
+                                        if((tag[i]===userdata.tags[j])){
+                                            if(userdata.sex === gender){
+                                                console.log("This is gender under algo :",userdata.sex);
+                                                SendUser = true;
+                                            }
                                         }
                                     }
                                 } 
@@ -496,7 +514,7 @@ module.exports.userFeeds = (req,res,next)=>{
                                 }
                             }
                         })
-                        console.log("under this all your tag users are loged in",suggestions)
+                        // console.log("under this all your tag users are loged in",suggestions)
                         res.status(200).json({
                             suggestions,
                             message:"data retrieved succesfully"
@@ -554,6 +572,37 @@ module.exports.deleteUsr = (req,res,next) =>{
                 console.log("user deleted succesfully");
                 res.status(200).json({statuscode:200});
             }
+        })
+    }
+    catch(err){
+        next(err);
+    }
+}
+
+module.exports.AddlikedUser = (req,res,next)=>{
+    try{
+        const {id, likedpl} = req.body;
+        User.findById(id,(error,user)=>{
+            if(error){
+                return res.status(400).json({message:"failure"});
+            }
+            if(user){
+                for(var i=0;i<likedpl.length;i++){
+                    user.likedppl.push(likedpl[i]);
+                }
+            }
+            user.save((err,data)=>{
+                if(err){
+                    return res.status(400).json({
+                        message:"error in updation"
+                    })
+                }
+                else{
+                    return res.status(200).json({
+                        message:"success"
+                    });
+                }
+            });
         })
     }
     catch(err){
